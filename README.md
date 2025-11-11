@@ -55,11 +55,11 @@ After setup:
 ```
 v-server-setup/
 │
-├── README.md
-├── .gitignore
 ├── docs/
-│   ├── server-setup.md
-│   └── Checklist-V-Server.pdf
+│ ├── server-setup.md
+│ └── Checklist-V-Server.pdf
+├── .gitignore
+├── README.md
 ```
 
 ---

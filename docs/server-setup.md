@@ -1,223 +1,246 @@
 # Server Setup Documentation
 
-## 1. Generating SSH Keys and First Login
+## Generate SSH Keys
 
-1. ```bash
-   ssh-keygen -t ed25519
-   ```
-   - Generates a public-private key pair.
-   - The files are saved locally (e.g. `<your/path/to/.ssh/...>`).
-   - Optionally secured with a passphrase.
+```bash
+ssh-keygen -t ed25519
+```
 
-2. ```bash
-   ssh yourusername@your.server.ip
-   ```
-   - Connects to the server using the SSH protocol.
-   - Confirm the fingerprint with `yes` to trust the connection.
-   - Enter the server password to log in.
+Generates a secure public/private SSH key pair stored inside your `.ssh` directory.
 
 ---
 
-## 2. Adding the Public SSH Key to the Server
+## Connect to the Server
 
-1. ```bash
-   ssh-copy-id -i <your/path/to/.ssh/V-Server/id_ed25519.pub> yourusername@your.server.ip
-   ```
-   - Copies the public key to the server's `authorized_keys` file.
-   - This allows key-based authentication without a password.
+```bash
+ssh yourusername@your.server.ip
+```
 
-2. ```bash
-   ssh -i <your/path/to/.ssh/V-Server/id_ed25519> yourusername@your.server.ip
-   ```
-   - Tests the connection using the private key.
-   - Successful authentication confirms the setup.
+Logs into your remote server for the first time.  
+Confirm the fingerprint with `yes` and enter your server password.
 
 ---
 
-## 3. Disabling Password Login
+## Copy Your Public Key to the Server
 
-1. ```bash
-   sudo nano /etc/ssh/sshd_config
-   ```
-   - Edit the SSH configuration file.
-   - Change `#PasswordAuthentication yes` to `PasswordAuthentication no`.
+```bash
+ssh-copy-id -i <your/path/to/.ssh/V-Server/id_ed25519.pub> yourusername@your.server.ip
+```
 
-2. ```bash
-   sudo systemctl restart ssh.service
-   ```
-   - Restarts the SSH service to apply the change.
-
-3. ```bash
-   logout
-   ```
-   - Password login is now disabled.
-   - Only SSH key-based login is accepted.
+Adds your public SSH key to the server's `authorized_keys` file, enabling key‑based login.
 
 ---
 
-## 4. Installing and Testing NGINX
+## Test Key‑Based Login
 
-1. ```bash
-   sudo apt update
-   ```
-   - Updates all available packages.
+```bash
+ssh -i <your/path/to/.ssh/V-Server/id_ed25519> yourusername@your.server.ip
+```
 
-2. ```bash
-   sudo apt install nginx -y
-   ```
-   - Installs the NGINX web server.
-
-3. ```bash
-   systemctl status nginx.service
-   ```
-   - Verifies if NGINX is running successfully.
-   - Visiting the server's IP shows "Welcome to nginx!".
+Ensures you can log in using your SSH key without a password.
 
 ---
 
-## 5. Creating an Alternative HTML Page
+## Disable Password Authentication
 
-1. ```bash
-   sudo mkdir /var/www/alternatives
-   ```
-   - Creates a new directory for the custom HTML page.
+```bash
+sudo nano /etc/ssh/sshd_config
+```
 
-2. ```bash
-   sudo touch /var/www/alternatives/alternate-index.html
-   ```
-   - Creates a new HTML file.
+Update the file and set:
 
-3. Add content:
+```
+PasswordAuthentication no
+```
 
-   ```html
-   <!doctype html>
-   <html>
-     <head>
-       <meta charset="utf-8">
-       <title>Hello, Nginx!</title>
-     </head>
-     <body>
-       <h1>Hello, Nginx!</h1>
-       <p>I have just configured our Nginx web server on Ubuntu Server!</p>
-     </body>
-   </html>
-   ```
+Apply changes:
 
-4. ```bash
-   sudo nano /etc/nginx/sites-enabled/alternatives
-   ```
-   - Create a new configuration file with:
-
-   ```nginx
-   server {
-       listen 8081;
-       listen [::]:8081;
-       root /var/www/alternatives;
-       index alternate-index.html;
-       location / {
-           try_files $uri $uri/ =404;
-       }
-   }
-   ```
-
-5. ```bash
-   sudo nginx -t
-   ```
-   - Validates that the configuration syntax is correct.
-
-6. ```bash
-   sudo service nginx restart
-   ```
-   - Restarts NGINX to apply the new configuration.
-   - Access `http://your.server.ip:8081` to see your new HTML page.
+```bash
+sudo systemctl restart ssh.service
+```
 
 ---
 
-## 6. Creating SSH Aliases
+## Install NGINX
 
-1. ```bash
-   alias v_server="ssh -i <your/path/to/.ssh/V-Server/id_ed25519> yourusername@your.server.ip"
-   ```
-   - Defines a shortcut command for faster SSH access.
+```bash
+sudo apt update
+sudo apt install nginx -y
+```
 
-2. Add the alias permanently by editing:
+Installs and updates the NGINX web server.
 
-   ```bash
-   nano ~/.zshrc
-   ```
-   - Add the alias there to make it persistent.
+Check status:
 
----
-
-## 7. Configuring Multiple SSH Identities
-
-1. ```bash
-   vim <your/path/to/.ssh/config>
-   ```
-   - Edit SSH configuration for multiple hosts.
-
-2. Add:
-
-   ```text
-   Host vserver
-       HostName your.server.ip
-       User yourusername
-       PreferredAuthentications publickey
-       IdentityFile <your/path/to/.ssh/V-Server/id_ed25519>
-   ```
-
-3. ```bash
-   ssh vserver
-   ```
-   - Connects directly using the saved configuration.
+```bash
+systemctl status nginx.service
+```
 
 ---
 
-## 8. GitHub SSH Access on the V-Server
+## Create an Alternative HTML Page
 
-1. ```bash
-   git config --global user.name "Your Name"
-   ```
-   - Sets your Git author name for commits.
+Create directory:
 
-2. ```bash
-   git config --global user.email "your.email@example.com"
-   ```
-   - Links commits to your GitHub account.
+```bash
+sudo mkdir /var/www/alternatives
+```
 
-3. ```bash
-   ssh-keygen -t ed25519 -C "your.email@example.com" -f ~/.ssh/id_ed25519_github
-   ```
-   - Generates a dedicated SSH key for GitHub access.
+Create HTML file:
 
-4. ```bash
-   cat ~/.ssh/id_ed25519_github.pub
-   ```
-   - Displays the public key to copy into GitHub.
+```bash
+sudo touch /var/www/alternatives/alternate-index.html
+```
 
-5. Add the key on GitHub under  
-   **Settings → SSH and GPG keys → New SSH key**
+Add content:
 
-6. ```bash
-   nano ~/.ssh/config
-   ```
-   - Add GitHub configuration:
+```html
+<!doctype html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <title>Hello, Nginx!</title>
+  </head>
+  <body>
+    <h1>Hello, Nginx!</h1>
+    <p>I have just configured our Nginx web server on Ubuntu Server!</p>
+  </body>
+</html>
+```
 
-   ```text
-   Host github.com
-       HostName github.com
-       User git
-       IdentityFile ~/.ssh/id_ed25519_github
-       IdentitiesOnly yes
-   ```
+Create new NGINX config:
 
-7. ```bash
-   ssh -T git@github.com
-   ```
-   - Tests the connection.
-   - If successful, GitHub replies:  
-     `Hi yourgithubusername! You've successfully authenticated, but GitHub does not provide shell access.`
+```bash
+sudo nano /etc/nginx/sites-enabled/alternatives
+```
+
+Add:
+
+```nginx
+server {
+    listen 8081;
+    listen [::]:8081;
+    root /var/www/alternatives;
+    index alternate-index.html;
+
+    location / {
+        try_files $uri $uri/ =404;
+    }
+}
+```
+
+Test configuration:
+
+```bash
+sudo nginx -t
+```
+
+Restart NGINX:
+
+```bash
+sudo service nginx restart
+```
+
+Access:
+
+```
+http://your.server.ip:8081
+```
 
 ---
 
-✅ **The server is now fully configured, secured and connected to GitHub.**
+## Create SSH Aliases
+
+```bash
+alias v_server="ssh -i <your/path/to/.ssh/V-Server/id_ed25519> yourusername@your.server.ip"
+```
+
+Make the alias permanent:
+
+```bash
+nano ~/.zshrc
+```
+
+---
+
+## Configure Multiple SSH Identities
+
+Open SSH config:
+
+```bash
+vim <your/path/to/.ssh/config>
+```
+
+Add:
+
+```text
+Host vserver
+    HostName your.server.ip
+    User yourusername
+    PreferredAuthentications publickey
+    IdentityFile <your/path/to/.ssh/V-Server/id_ed25519>
+```
+
+Connect:
+
+```bash
+ssh vserver
+```
+
+---
+
+## Configure GitHub SSH Access
+
+Set your identity:
+
+```bash
+git config --global user.name "Your Name"
+git config --global user.email "your.email@example.com"
+```
+
+Generate GitHub key:
+
+```bash
+ssh-keygen -t ed25519 -C "your.email@example.com" -f ~/.ssh/id_ed25519_github
+```
+
+Show public key:
+
+```bash
+cat ~/.ssh/id_ed25519_github.pub
+```
+
+Add on GitHub:  
+**Settings → SSH and GPG keys → New SSH key**
+
+Configure SSH:
+
+```bash
+nano ~/.ssh/config
+```
+
+Add:
+
+```text
+Host github.com
+    HostName github.com
+    User git
+    IdentityFile ~/.ssh/id_ed25519_github
+    IdentitiesOnly yes
+```
+
+Test:
+
+```bash
+ssh -T git@github.com
+```
+
+Expected output:
+
+```
+Hi yourgithubusername! You've successfully authenticated, but GitHub does not provide shell access.
+```
+
+---
+
+✅ Your server is fully configured, secured, and connected to GitHub.
